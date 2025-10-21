@@ -1,0 +1,107 @@
+#include <iostream>
+#include <string>
+#include <limits>   
+using namespace std;
+
+struct Product {
+    int id;
+    string name;
+};
+
+struct Node {
+    Product item;
+    Node* left;
+    Node* right;
+    Node(Product p) : item(p), left(nullptr), right(nullptr) {}
+};
+
+Node* insertNode(Node* root, Product p) {
+    if (!root) return new Node(p);
+    if (p.id < root->item.id) root->left = insertNode(root->left, p);
+    else if (p.id > root->item.id) root->right = insertNode(root->right, p);
+    // jika ID sudah ada, abaikan (atau bisa di-update sesuai kebutuhan)
+    return root;
+}
+
+Node* findMin(Node* root) {
+    while (root && root->left) root = root->left;
+    return root;
+}
+
+Node* deleteNode(Node* root, int id) {
+    if (!root) return nullptr;
+    if (id < root->item.id) root->left = deleteNode(root->left, id);
+    else if (id > root->item.id) root->right = deleteNode(root->right, id);
+    else {
+        if (!root->left && !root->right) {           // daun
+            delete root; return nullptr;
+        } else if (!root->left) {                    // satu anak (kanan)
+            Node* t = root->right; delete root; return t;
+        } else if (!root->right) {                   // satu anak (kiri)
+            Node* t = root->left; delete root; return t;
+        } else {                                     // dua anak
+            Node* t = findMin(root->right);
+            root->item = t->item;
+            root->right = deleteNode(root->right, t->item.id);
+        }
+    }
+    return root;
+}
+
+Node* searchNode(Node* root, int id) {
+    if (!root) return nullptr;
+    if (id == root->item.id) return root;
+    if (id < root->item.id) return searchNode(root->left, id);
+    return searchNode(root->right, id);
+}
+
+void inorder(Node* root) {
+    if (!root) return;
+    inorder(root->left);
+    cout << "ID: " << root->item.id << ", Nama Ikan: " << root->item.name << '\n';
+    inorder(root->right);
+}
+
+int main() {
+    Node* root = nullptr;
+    int pilih;
+
+    do {
+        cout << "\n=== Katalog Ikan Hias RumahIkan ===\n";
+        cout << "1. Tambah ikan\n2. Cari ikan\n3. Lihat semua ikan\n4. Hapus ikan\n5. Keluar\n";
+        cout << "Pilih: ";
+        if (!(cin >> pilih)) return 0;  // handle input non-angka
+
+        if (pilih == 1) {
+            Product p;
+            cout << "Masukkan ID ikan: ";
+            cin >> p.id;
+            cin.ignore(numeric_limits<streamsize>::max(), '\n'); // bersihkan newline
+            cout << "Masukkan nama ikan: ";
+            getline(cin, p.name);
+            root = insertNode(root, p);
+            cout << "Ikan berhasil ditambahkan!\n";
+        }
+        else if (pilih == 2) {
+            int id;
+            cout << "Masukkan ID yang dicari: ";
+            cin >> id;
+            Node* found = searchNode(root, id);
+            if (found) cout << "Ikan ditemukan → " << found->item.name << '\n';
+            else cout << "Ikan tidak ditemukan.\n";
+        }
+        else if (pilih == 3) {
+            cout << "\nDaftar Ikan (urut ID):\n";
+            inorder(root);
+        }
+        else if (pilih == 4) {
+            int id;
+            cout << "Masukkan ID ikan yang ingin dihapus: ";
+            cin >> id;
+            root = deleteNode(root, id);
+            cout << "Ikan dihapus (jika ada).\n";
+        }
+    } while (pilih != 5);
+
+    return 0;
+}
